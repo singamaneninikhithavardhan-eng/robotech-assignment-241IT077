@@ -1,4 +1,4 @@
-console.log("DB_PASSWORD type:", typeof process.env.DB_PASSWORD);
+
 
 import pkg from "pg";
 const { Pool } = pkg;
