@@ -1,198 +1,194 @@
-import { useState } from "react";
-import api from "../../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  /* ===== LOGOUT CONFIRMATION ===== */
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  // Safely get context
+  const context = useOutletContext();
+  const user = context?.user;
 
-  const logout = async () => {
-    await api.post("/auth/logout");
-    navigate("/admin/login");
+  /* ================= PERMISSION HELPER ================= */
+  const hasPermission = (perm) => {
+    if (!user) return false;
+    if (user.role === 'WEB_LEAD') return true;
+
+    return user.permissions && user.permissions.includes(perm);
   };
 
   return (
-    <div className="p-6 sm:p-8 text-white">
+    <div className="animate-fade-in">
+
       {/* ===== HEADER ===== */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-cyan-400">
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 font-[Orbitron]">
           Admin Dashboard
         </h1>
-        <p className="text-sm text-gray-400">
-          Manage RoboTech website content and operations
+        <p className="text-gray-400 mt-2 text-lg">
+          Welcome back, {user?.profile?.full_name || user?.username || "Admin"}.
         </p>
       </div>
 
       {/* ===== DASHBOARD GRID ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
-        {/* ===== LANDING PAGE CMS ===== */}
+        {/* --- PROFILE (QUICK LINK) --- */}
         <DashboardCard
-          title="homepage"
-          desc="Go to public pages"
-          action="See public pages"
-          onClick={() => navigate("/")}
-          color="cyan"
-        />
-        <DashboardCard
-          title="Projects"
-          desc="Add, edit, and manage landing page projects"
-          action="Manage Projects"
-          onClick={() => navigate("/admin/projects")}
-          color="cyan"
+          title="My Profile"
+          desc="Update your personal details & photo."
+          icon="👤"
+          onClick={() => navigate("/admin/profile")}
+          accent="text-cyan-400"
+          border="hover:border-cyan-500/50"
         />
 
-        <DashboardCard
-          title="Gallery"
-          desc="Upload and manage landing page gallery images"
-          action="Manage Gallery"
-          onClick={() => navigate("/admin/gallery")}
-          color="blue"
-        />
+        {/* --- ROLES (NEW) --- */}
+        {hasPermission('can_manage_users') && (
+          <DashboardCard
+            title="Roles & Permissions"
+            desc="Create roles and set access levels."
+            icon="🔑"
+            onClick={() => navigate("/admin/roles")}
+            accent="text-purple-400"
+            border="hover:border-purple-500/50"
+          />
+        )}
 
-        {/* ===== ANNOUNCEMENTS ===== */}
-        <DashboardCard
-          title="Announcements"
-          desc="Create, publish, and manage public announcements"
-          action="Manage Announcements"
-          onClick={() => navigate("/admin/announcements")}
-          color="emerald"
-        />
+        {/* --- USERS --- */}
+        {hasPermission('can_manage_users') && (
+          <DashboardCard
+            title="User Management"
+            desc="Manage admins and assign roles."
+            icon="👥"
+            onClick={() => navigate("/admin/users")}
+            accent="text-pink-400"
+            border="hover:border-pink-500/50"
+          />
+        )}
 
-        {/* ===== EVENTS ===== */}
-        <DashboardCard
-          title="Events"
-          desc="Create and manage events, banners, and registration links"
-          action="Manage Events"
-          onClick={() => navigate("/admin/events")}
-          color="purple"
-        />
+        {/* --- TEAM --- */}
+        {hasPermission('can_manage_team') && (
+          <DashboardCard
+            title="Team & Members"
+            desc="Manage exec board and members."
+            icon="🛡️"
+            onClick={() => navigate("/admin/team")}
+            accent="text-teal-400"
+            border="hover:border-teal-500/50"
+          />
+        )}
 
-        {/* ===== TEAM ===== */}
-        <DashboardCard
-          title="Team Management"
-          desc="Manage team members year-wise"
-          action="Manage Team"
-          onClick={() => navigate("/admin/team")}
-          color="teal"
-        />
+        {/* --- PROJECTS --- */}
+        {hasPermission('can_manage_projects') && (
+          <DashboardCard
+            title="Projects"
+            desc="Manage portfolio projects."
+            icon="🚀"
+            onClick={() => navigate("/admin/projects")}
+            accent="text-cyan-400"
+            border="hover:border-cyan-500/50"
+          />
+        )}
 
-        {/* ===== CONTACT ===== */}
+        {/* --- EVENTS --- */}
+        {hasPermission('can_manage_events') && (
+          <DashboardCard
+            title="Events"
+            desc="Competitions and registrations."
+            icon="📅"
+            onClick={() => navigate("/admin/events")}
+            accent="text-purple-400"
+            border="hover:border-purple-500/50"
+          />
+        )}
+
+        {/* --- ANNOUNCEMENTS --- */}
+        {hasPermission('can_manage_announcements') && (
+          <DashboardCard
+            title="Announcements"
+            desc="Public news and updates."
+            icon="📢"
+            onClick={() => navigate("/admin/announcements")}
+            accent="text-emerald-400"
+            border="hover:border-emerald-500/50"
+          />
+        )}
+
+        {/* --- GALLERY --- */}
+        {hasPermission('can_manage_gallery') && (
+          <DashboardCard
+            title="Gallery"
+            desc="Photo and video gallery."
+            icon="🖼️"
+            onClick={() => navigate("/admin/gallery")}
+            accent="text-blue-400"
+            border="hover:border-blue-500/50"
+          />
+        )}
+
+        {/* --- MESSAGES --- */}
         <DashboardCard
-          title="Contact Messages"
-          desc="View messages from Contact Us page"
-          action="Open Inbox"
+          title="Messages"
+          desc="Inquiries from Contact Us page."
+          icon="✉️"
           onClick={() => navigate("/admin/contactMessages")}
-          color="indigo"
+          accent="text-indigo-400"
+          border="hover:border-indigo-500/50"
         />
 
-        {/* ===== SPONSORSHIP ===== */}
+        {/* --- SPONSORSHIP --- */}
         <DashboardCard
-          title="Sponsorship Inquiries"
-          desc="View and respond to sponsorship requests"
-          action="Open Inbox"
+          title="Sponsors"
+          desc="Sponsorship requests and leads."
+          icon="🤝"
           onClick={() => navigate("/admin/sponsorship")}
-          color="rose"
+          accent="text-rose-400"
+          border="hover:border-rose-500/50"
         />
 
-        {/* ===== SECURITY ===== */}
+        {/* --- SECURITY --- */}
         <DashboardCard
           title="Security"
-          desc="Change admin password"
-          action="Change Password"
+          desc="Password and access logs."
+          icon="🔒"
           onClick={() => navigate("/admin/change-password")}
-          color="yellow"
+          accent="text-yellow-400"
+          border="hover:border-yellow-500/50"
         />
 
-        {/* ===== AUDIT LOGS ===== */}
-        <DashboardCard
-          title="Audit Logs"
-          desc="View admin activity history"
-          action="View Logs"
-          onClick={() => navigate("/admin/audit-logs")}
-          color="gray"
-        />
-
-        {/* ===== LOGOUT ===== */}
-        <DashboardCard
-          title="Logout"
-          desc="Sign out from admin panel"
-          action="Logout"
-          onClick={() => setShowLogoutConfirm(true)}
-          color="red"
-        />
       </div>
-
-      {/* ===== LOGOUT CONFIRMATION MODAL ===== */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-[#0b0b0b] border border-white/10 rounded-xl p-6 w-full max-w-sm text-center">
-            <h2 className="text-lg font-semibold mb-2">
-              Confirm Logout
-            </h2>
-            <p className="text-sm text-gray-400 mb-6">
-              Are you sure you want to log out of the admin panel?
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={logout}
-                className="flex-1 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition"
-              >
-                Logout
-              </button>
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-/* ================= DASHBOARD CARD ================= */
-
-function DashboardCard({ title, desc, action, onClick, color }) {
-  const colorMap = {
-    cyan: "border-cyan-400 text-cyan-400",
-    blue: "border-blue-500 text-blue-400",
-    teal: "border-teal-400 text-teal-400",
-    indigo: "border-indigo-400 text-indigo-400",
-    yellow: "border-yellow-400 text-yellow-400",
-    gray: "border-gray-500 text-gray-300",
-    red: "border-red-500 text-red-400",
-    purple: "border-purple-400 text-purple-400",
-    rose: "border-rose-400 text-rose-400",
-    emerald: "border-emerald-400 text-emerald-400",
-  };
-
+function DashboardCard({ title, desc, icon, onClick, accent, border }) {
   return (
     <div
       onClick={onClick}
       className={`
-        cursor-pointer rounded-xl border
-        ${colorMap[color]}
-        bg-white/5 backdrop-blur-lg
-        p-6 transition-all
-        hover:scale-[1.03] hover:bg-white/10
-        flex flex-col
+        group
+        cursor-pointer 
+        relative
+        bg-white/5 backdrop-blur-md
+        border border-white/5 ${border}
+        rounded-2xl p-6
+        transition-all duration-300
+        hover:-translate-y-1 hover:bg-white/10 hover:shadow-xl
+        flex flex-col h-full
       `}
     >
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-gray-400 mb-6">{desc}</p>
+      <div className="flex items-start justify-between mb-4">
+        <div className={`p-3 rounded-xl bg-black/40 text-2xl ${accent}`}>
+          {icon}
+        </div>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
+          ↗
+        </div>
+      </div>
 
-      <button
-        className="mt-auto px-4 py-2 rounded bg-black/40 border border-white/20 text-sm"
-      >
-        {action}
-      </button>
+      <h3 className={`text-xl font-semibold mb-2 ${accent} group-hover:brightness-110`}>{title}</h3>
+      <p className="text-sm text-gray-400 leading-relaxed">
+        {desc}
+      </p>
     </div>
   );
 }

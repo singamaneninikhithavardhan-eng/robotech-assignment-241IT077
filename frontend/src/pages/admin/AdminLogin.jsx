@@ -3,7 +3,7 @@ import api from "../../api/axios";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -15,17 +15,22 @@ export default function AdminLogin() {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) {
-      setError("Please enter both email and password.");
+    if (!username || !password) {
+      setError("Please enter both username and password.");
       return;
     }
 
     try {
       setLoading(true);
-      await api.post("/auth/login", { email, password });
+      const res = await api.post("/token/", { username, password });
+
+      localStorage.setItem("accessToken", res.data.access);
+      localStorage.setItem("refreshToken", res.data.refresh);
+
+      // Navigate to Dashboard on success
       navigate("/admin/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid login credentials.");
+      setError(err.response?.data?.message || err.response?.data?.detail || "Invalid login credentials.");
     } finally {
       setLoading(false);
     }
@@ -89,15 +94,15 @@ export default function AdminLogin() {
           </div>
         )}
 
-        {/* Email */}
+        {/* Username */}
         <input
-          type="email"
-          autoComplete="email"
+          type="text"
+          autoComplete="username"
           className="w-full p-3 mb-4 rounded text-base"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          aria-label="Email address"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          aria-label="Username"
         />
 
         {/* Password */}
@@ -126,11 +131,10 @@ export default function AdminLogin() {
           type="submit"
           disabled={loading}
           aria-busy={loading}
-          className={`w-full py-3 rounded text-base font-medium transition ${
-            loading
+          className={`w-full py-3 rounded text-base font-medium transition ${loading
               ? "bg-gray-600 cursor-not-allowed"
               : "bg-blue-600 active:bg-blue-700"
-          }`}
+            }`}
         >
           {loading ? "Signing in…" : "Login"}
         </button>

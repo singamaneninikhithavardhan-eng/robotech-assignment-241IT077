@@ -24,7 +24,7 @@ export default function AdminProjectsPage() {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/admin/projects");
+      const res = await api.get("/admin/projects/");
       setProjects(res.data);
     } catch (err) {
       console.error("Failed to load projects", err);
@@ -37,7 +37,7 @@ export default function AdminProjectsPage() {
   const confirmDelete = async () => {
     try {
       setDeleteLoading(true);
-      await api.delete(`/admin/projects/${deleting.id}`);
+      await api.delete(`/admin/projects/${deleting.id}/`);
       setDeleting(null);
       loadProjects();
     } catch (err) {
@@ -197,15 +197,19 @@ function ProjectForm({ editing, onClose, onSaved }) {
 
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-    images.forEach((img) => fd.append("images", img));
+
+    // Django expects 'cover_image' (single file)
+    if (images.length > 0) {
+      fd.append("cover_image", images[0]);
+    }
 
     try {
       setSaving(true);
 
       if (editing) {
-        await api.put(`/admin/projects/${editing.id}`, fd);
+        await api.put(`/admin/projects/${editing.id}/`, fd);
       } else {
-        await api.post("/admin/projects", fd);
+        await api.post("/admin/projects/", fd);
       }
 
       onSaved();

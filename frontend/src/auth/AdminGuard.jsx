@@ -6,12 +6,21 @@ export default function AdminGuard({ children }) {
   const [allowed, setAllowed] = useState(null);
 
   useEffect(() => {
+    // If no token, fail immediately
+    if (!localStorage.getItem("accessToken")) {
+      setAllowed(false);
+      return;
+    }
+
     api
-      .get("/auth/check")
+      .get("/me/")
       .then(() => setAllowed(true))
-      .catch(() => setAllowed(false));
+      .catch(() => {
+        // Token might be expired, try refreshing or logout
+        setAllowed(false);
+      });
   }, []);
 
-  if (allowed === null) return null;
-  return allowed ? children : <Navigate to="/admin/login" />;
+  if (allowed === null) return <div className="p-10 text-center text-white">Loading...</div>; // Simple loading state
+  return allowed ? children : <Navigate to="/login" />;
 }

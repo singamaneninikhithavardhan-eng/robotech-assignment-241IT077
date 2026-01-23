@@ -16,39 +16,47 @@ export default function LandingPage() {
   const [showSplash, setShowSplash] = useState(true);
 
   /* ================= LOAD DATA ================= */
+  /* ================= LOAD DATA ================= */
   useEffect(() => {
-    async function loadData() {
+    let isMounted = true;
+    const loadData = async () => {
       try {
-        const projRes = await api.get("/projects");
-        const galRes = await api.get("/gallery");
+        const [projRes, galRes] = await Promise.all([
+          api.get("/projects"),
+          api.get("/gallery")
+        ]);
 
-        setProjects(projRes.data);
-        setGallery(galRes.data);
+        if (isMounted) {
+          setProjects(projRes.data);
+          setGallery(galRes.data);
+        }
       } catch (err) {
         console.error("Landing page load error:", err);
       }
-    }
+    };
     loadData();
+    return () => { isMounted = false; };
   }, []);
- useEffect(() => {
-  const timer = setTimeout(() => {
-    setShowSplash(false);
-  }, 3000); // ⏱️ HARD 5 SECONDS
 
-  return () => clearTimeout(timer);
-}, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <>
       {/* ================= SPLASH ================= */}
       {showSplash && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
-        <img
-          src="/robotech_nitk_logo.jpeg"
-          alt="RoboTech Logo"
-          className="w-64 h-64 rounded-full animate-logoBoot"
-        />
-      </div>
-    )}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
+          <img
+            src="/robotech_nitk_logo.jpeg"
+            alt="RoboTech Logo"
+            className="w-64 h-64 rounded-full animate-logoBoot"
+          />
+        </div>
+      )}
 
       <Navigation />
 
@@ -62,7 +70,7 @@ export default function LandingPage() {
       >
         <source src="/landingBg2.mp4" type="video/mp4" />
       </video>
-      
+
 
       {/* ================= HERO ================= */}
       <section className="relative h-screen w-full overflow-hidden">
@@ -76,7 +84,7 @@ export default function LandingPage() {
           <source src="/landingBg1.mp4" type="video/mp4" />
         </video>
 
-       
+
 
         <div className="relative z-10 flex flex-col justify-center items-center h-full text-center px-6">
           <h1 className="text-5xl md:text-7xl font-[Orbitron] font-bold text-cyan-400 tracking-wider drop-shadow-[0_0_25px_#00fff2]">

@@ -31,12 +31,12 @@ export default function Navbar() {
 
   return (
     <>
- <nav
-  ref={navbarRef}
-  className={`fixed top-0 left-0 w-full h-20 z-50 transition-all duration-500 text-gray-200
+      <nav
+        ref={navbarRef}
+        className={`fixed top-0 left-0 w-full h-20 z-50 transition-all duration-500 text-gray-200
     ${mobileOpen ? "opacity-0 pointer-events-none" : ""}
   `}
->
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           {/* Logos */}
           <div className="flex items-center space-x-4">
@@ -57,9 +57,9 @@ export default function Navbar() {
           <div className="hidden md:flex space-x-8 items-center text-sm font-medium">
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/events" className="nav-link">Events</Link>
-           
+
             <Link to="/team" className="nav-link">Team</Link>
-         
+
             <a
               href="https://sim2real.nitk.ac.in/"
               target="_blank"
@@ -70,7 +70,8 @@ export default function Navbar() {
             </a>
             <Link to="/sponsorship" className="nav-link">Sponsor Us</Link>
             <Link to="/contactUs" className="nav-link">Contact Us</Link>
-             <Link to="/announcements" className="nav-link">Announcements</Link>
+            <Link to="/announcements" className="nav-link">Announcements</Link>
+            <Link to="/login" className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 rounded-md transition-colors">Login</Link>
           </div>
 
           {/* Mobile Button */}
@@ -126,7 +127,7 @@ export default function Navbar() {
           <div className="flex-1 flex flex-col justify-center px-8 space-y-6 text-lg font-medium">
             <Link onClick={() => setMobileOpen(false)} to="/" className="mobile-link">Home</Link>
             <Link onClick={() => setMobileOpen(false)} to="/events" className="mobile-link">Events</Link>
-           
+
             <Link onClick={() => setMobileOpen(false)} to="/team" className="mobile-link">Team</Link>
             <a
               href="https://sim2real.nitk.ac.in/"
@@ -138,7 +139,8 @@ export default function Navbar() {
             </a>
             <Link onClick={() => setMobileOpen(false)} to="/sponsorship" className="mobile-link">Sponsor Us</Link>
             <Link onClick={() => setMobileOpen(false)} to="/contactUs" className="mobile-link">Contact Us</Link>
-             <Link onClick={() => setMobileOpen(false)} to="/announcements" className="mobile-link">Announcements</Link>
+            <Link onClick={() => setMobileOpen(false)} to="/announcements" className="mobile-link">Announcements</Link>
+            <Link onClick={() => setMobileOpen(false)} to="/login" className="mobile-link text-cyan-400 font-semibold">Login</Link>
           </div>
         </div>
       )}

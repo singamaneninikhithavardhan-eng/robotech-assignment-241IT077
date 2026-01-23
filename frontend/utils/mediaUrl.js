@@ -10,6 +10,10 @@ export function buildMediaUrl(path) {
     return "";
   }
 
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
   const cleanBase = base.replace(/\/$/, "");
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
