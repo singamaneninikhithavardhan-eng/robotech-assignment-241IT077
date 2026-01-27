@@ -16,6 +16,7 @@ export default function AdminProjectsPage() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [users, setUsers] = useState([]);
   const [joinModal, setJoinModal] = useState(null); // project id
+  const [deleteModal, setDeleteModal] = useState(null); // project object for deletion
 
   useEffect(() => { loadData(); }, []);
 
@@ -43,6 +44,17 @@ export default function AdminProjectsPage() {
       loadData();
     } catch (err) {
       alert(err.response?.data?.error || "Signal failure.");
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!deleteModal) return;
+    try {
+      await api.delete(`/projects/${deleteModal.id}/`);
+      setDeleteModal(null);
+      loadData();
+    } catch (err) {
+      alert("Failed to delete project.");
     }
   };
 
@@ -97,6 +109,11 @@ export default function AdminProjectsPage() {
                   else if (user.permissions?.includes('can_manage_projects')) setSelectedProject(p);
                   else alert("Restricted Area: Recruitment Pending.");
                 }}
+                onDelete={(e) => {
+                  e.stopPropagation();
+                  setDeleteModal(p);
+                }}
+                canDelete={user.is_superuser || p.lead === user.id}
               />
             );
           })}
@@ -134,11 +151,44 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       )}
+
+      {deleteModal && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass border border-red-500/30 p-8 rounded-2xl max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.1)]">
+            <h3 className="text-2xl font-bold font-[Orbitron] text-red-500 mb-2">Confirm Termination</h3>
+            <p className="text-gray-400 text-sm mb-6">
+              This action will permanently purge the workspace <span className="text-white font-bold">"{deleteModal.title}"</span> and all associated data.
+            </p>
+
+            <p className="text-xs text-gray-500 mb-2 uppercase font-bold">Type "<span className="text-red-400">{deleteModal.title}</span>" to confirm:</p>
+            <input
+              id="delete-confirm-input"
+              className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white text-sm mb-6 outline-none focus:border-red-500 transition"
+              placeholder={deleteModal.title}
+            />
+
+            <div className="flex gap-4">
+              <button onClick={() => setDeleteModal(null)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-500 font-bold hover:bg-white/5 transition uppercase tracking-widest text-xs">Cancel</button>
+              <button
+                onClick={() => {
+                  const input = document.getElementById('delete-confirm-input');
+                  if (input.value === deleteModal.title) {
+                    handleDeleteProject();
+                  } else {
+                    alert("Confirmation signature mismatch.");
+                  }
+                }}
+                className="flex-[2] py-3 rounded-xl bg-red-600/20 text-red-500 border border-red-500/50 font-black hover:bg-red-600 hover:text-white transition shadow-lg shadow-red-500/10 uppercase tracking-widest text-xs"
+              >Execute Purge</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ProjectCard({ project, onClick, isMember, hasRequested, onJoin }) {
+function ProjectCard({ project, onClick, isMember, hasRequested, onJoin, onDelete, canDelete }) {
   const statusColors = {
     'PROPOSED': 'bg-gray-700/20 text-gray-400 border-white/10',
     'IN_PROGRESS': 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
@@ -153,6 +203,15 @@ function ProjectCard({ project, onClick, isMember, hasRequested, onJoin }) {
           {project.status.replace("_", " ")}
         </span>
         {project.status_update_requested && <div className="bg-amber-500/20 text-amber-500 p-1.5 rounded-lg animate-pulse border border-amber-500/30"><WarningIcon /></div>}
+        {canDelete && (
+          <button
+            onClick={onDelete}
+            className="text-red-500/30 hover:text-red-500 p-1 rounded transition-colors"
+            title="Delete Workspace"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+          </button>
+        )}
       </div>
 
       <h3 className="text-xl font-bold text-white mb-3 group-hover:text-cyan-400 transition-colors uppercase font-[Orbitron] tracking-tight">{project.title}</h3>

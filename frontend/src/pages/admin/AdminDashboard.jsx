@@ -51,31 +51,30 @@ export default function AdminDashboard() {
       </div>
 
       {/* --- QUICK STATS --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           label="Active Projects"
           value={(user?.projects_info?.member?.length || 0) + (user?.projects_info?.led?.length || 0)}
           icon={Rocket}
           color="cyan"
-          desc="Across all sectors"
         />
         <StatCard
-          label="Access Level"
+          label="My Role"
           value={user?.role === 'WEB_LEAD' ? "Web Lead" : user?.profile?.position || "Member"}
           icon={Shield}
           color="purple"
-          desc="Command privileges granted"
         />
-        <RecruitmentToggleCard />
+        <div className="lg:col-span-2">
+          <RecruitmentToggleCard />
+        </div>
       </div>
 
       {/* ===== DASHBOARD GRID ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
 
         {/* --- CORE SECTIONS --- */}
         <DashboardCard
-          title="My Profile"
-          desc="Manage identity and credentials."
+          title="Profile"
           icon={User}
           onClick={() => navigate("/portal/profile")}
           accent="text-white"
@@ -84,7 +83,6 @@ export default function AdminDashboard() {
 
         <DashboardCard
           title="Workspaces"
-          desc="Launch and coordinate missions."
           icon={Rocket}
           onClick={() => navigate("/portal/projects")}
           accent="text-cyan-400"
@@ -94,8 +92,7 @@ export default function AdminDashboard() {
         {/* --- MANAGEMENT SECTIONS --- */}
         {hasPermission('can_manage_users') && (
           <DashboardCard
-            title="Access Control"
-            desc="Configure roles and security."
+            title="Access"
             icon={Key}
             onClick={() => navigate("/portal/roles")}
             accent="text-purple-400"
@@ -105,8 +102,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_users') && (
           <DashboardCard
-            title="Personnel List"
-            desc="Directory of all club members."
+            title="Personnel"
             icon={Users}
             onClick={() => navigate("/portal/users")}
             accent="text-pink-400"
@@ -116,8 +112,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_team') && (
           <DashboardCard
-            title="Structure Board"
-            desc="Executive hierarchy control."
+            title="Structure"
             icon={ShieldAlert}
             onClick={() => navigate("/portal/team")}
             accent="text-teal-400"
@@ -128,8 +123,7 @@ export default function AdminDashboard() {
         {/* --- CONTENT SECTIONS --- */}
         {hasPermission('can_manage_team') && (
           <DashboardCard
-            title="Recruitment Ops"
-            desc="Manage drives & timelines."
+            title="Recruitment"
             icon={Briefcase}
             onClick={() => navigate("/portal/recruitment")}
             accent="text-orange-400"
@@ -139,8 +133,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_events') && (
           <DashboardCard
-            title="Events Center"
-            desc="Coordinate club ceremonies."
+            title="Events"
             icon={Calendar}
             onClick={() => navigate("/portal/events")}
             accent="text-amber-400"
@@ -151,7 +144,6 @@ export default function AdminDashboard() {
         {hasPermission('can_manage_announcements') && (
           <DashboardCard
             title="Broadcast"
-            desc="Global announcements channel."
             icon={Megaphone}
             onClick={() => navigate("/portal/announcements")}
             accent="text-emerald-400"
@@ -161,8 +153,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_gallery') && (
           <DashboardCard
-            title="Visual Media"
-            desc="Gallery and archive system."
+            title="Media"
             icon={ImageIcon}
             onClick={() => navigate("/portal/gallery")}
             accent="text-blue-400"
@@ -172,8 +163,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_messages') && (
           <DashboardCard
-            title="Neural Link"
-            desc="External inquiries inbox."
+            title="Inbox"
             icon={Mail}
             onClick={() => navigate("/portal/contactMessages")}
             accent="text-indigo-400"
@@ -183,8 +173,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_sponsorship') && (
           <DashboardCard
-            title="Strategic Partners"
-            desc="Sponsorship management."
+            title="Sponsors"
             icon={Handshake}
             onClick={() => navigate("/portal/sponsorship")}
             accent="text-rose-400"
@@ -194,8 +183,7 @@ export default function AdminDashboard() {
 
         {hasPermission('can_manage_forms') && (
           <DashboardCard
-            title="Registry Engine"
-            desc="Dynamic form & survey builder."
+            title="Forms"
             icon={FileText}
             onClick={() => navigate("/portal/forms")}
             accent="text-orange-400"
@@ -208,7 +196,7 @@ export default function AdminDashboard() {
   );
 }
 
-function DashboardCard({ title, desc, icon: Icon, onClick, accent, color }) {
+function DashboardCard({ title, icon: Icon, onClick, accent, color }) {
   return (
     <div
       onClick={onClick}
@@ -217,32 +205,23 @@ function DashboardCard({ title, desc, icon: Icon, onClick, accent, color }) {
         cursor-pointer 
         relative
         bg-[#0d0e14] border border-white/5
-        rounded-2xl p-6
+        rounded-xl p-4
         transition-all duration-300
-        hover:-translate-y-2 hover:border-white/20 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]
-        flex flex-col h-full
+        hover:-translate-y-1 hover:border-white/20 hover:shadow-lg
+        flex flex-col items-center justify-center gap-3 text-center
+        h-32
       `}
     >
       <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"
-        style={{ background: `radial-gradient(circle at top right, ${color} 0%, transparent 70%)` }}
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl pointer-events-none"
+        style={{ background: `radial-gradient(circle at center, ${color} 0%, transparent 70%)` }}
       />
 
-      <div className="flex items-start justify-between mb-5 relative z-10">
-        <div className={`p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 ${accent} group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-black/20`}>
-          <Icon size={24} />
-        </div>
-        <div className="opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 text-white/40">
-          <ArrowUpRight size={20} />
-        </div>
+      <div className={`p-2 rounded-lg bg-white/5 backdrop-blur-md border border-white/10 ${accent} group-hover:scale-110 transition-transform duration-300 relative z-10`}>
+        <Icon size={20} />
       </div>
 
-      <div className="relative z-10">
-        <h3 className={`text-xl font-bold mb-2 ${accent} group-hover:brightness-125 transition-all`}>{title}</h3>
-        <p className="text-sm text-gray-500 leading-relaxed font-medium group-hover:text-gray-400 transition-colors">
-          {desc}
-        </p>
-      </div>
+      <h3 className={`text-sm font-bold ${accent} group-hover:brightness-125 transition-all relative z-10`}>{title}</h3>
     </div>
   );
 }
@@ -255,14 +234,13 @@ function StatCard({ label, value, icon: Icon, color, desc }) {
   };
 
   return (
-    <div className={`bg-gradient-to-br ${themes[color]} border rounded-2xl p-6 flex items-center gap-6 shadow-lg shadow-black/20 hover:border-white/20 transition-all duration-300`}>
-      <div className={`p-4 rounded-2xl bg-black/40 border border-white/5 ${themes[color].split(' ')[2]}`}>
-        <Icon size={28} />
+    <div className={`bg-gradient-to-br ${themes[color]} border rounded-xl p-4 flex items-center gap-4 shadow-lg shadow-black/20 hover:border-white/20 transition-all duration-300`}>
+      <div className={`p-2.5 rounded-lg bg-black/40 border border-white/5 ${themes[color].split(' ')[2]}`}>
+        <Icon size={20} />
       </div>
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">{label}</p>
-        <p className="text-2xl font-bold font-[Orbitron] tracking-tight">{value}</p>
-        <p className="text-xs text-gray-500 mt-1 font-medium">{desc}</p>
+        <p className="text-[10px] font-black uppercase tracking-wider opacity-50 mb-0.5">{label}</p>
+        <p className="text-xl font-bold font-[Orbitron] tracking-tight">{value}</p>
       </div>
     </div>
   );
@@ -292,32 +270,29 @@ const RecruitmentToggleCard = () => {
   };
 
   return (
-    <div className={`bg-gradient-to-br from-green-500/10 to-transparent border ${enabled ? 'border-green-500/50' : 'border-white/10'} rounded-2xl p-6 flex items-center gap-6 shadow-lg shadow-black/20 hover:border-white/20 transition-all duration-300 relative overflow-hidden group`}>
+    <div className={`bg-gradient-to-br from-green-500/10 to-transparent border ${enabled ? 'border-green-500/50' : 'border-white/10'} rounded-xl p-4 flex items-center gap-4 shadow-lg shadow-black/20 hover:border-white/20 transition-all duration-300 relative overflow-hidden group h-full`}>
 
       {/* Background Glow */}
       <div className={`absolute -right-10 -top-10 w-32 h-32 bg-green-500/20 blur-[50px] transition-opacity duration-500 ${enabled ? 'opacity-100' : 'opacity-0'}`} />
 
-      <div className={`p-4 rounded-2xl bg-black/40 border transition-colors duration-300 ${enabled ? 'border-green-500/50 text-green-400' : 'border-white/5 text-gray-500'}`}>
-        <Activity size={28} />
+      <div className={`p-2.5 rounded-lg bg-black/40 border transition-colors duration-300 ${enabled ? 'border-green-500/50 text-green-400' : 'border-white/5 text-gray-500'}`}>
+        <Activity size={20} />
       </div>
 
       <div className="flex-1 z-10 relative">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">Recruitment Status</p>
+        <p className="text-[10px] font-black uppercase tracking-wider opacity-50 mb-0.5">Recruitment</p>
         <div className="flex items-center gap-3">
-          <p className={`text-2xl font-bold font-[Orbitron] tracking-tight transition-colors ${enabled ? 'text-white' : 'text-gray-500'}`}>
+          <p className={`text-xl font-bold font-[Orbitron] tracking-tight transition-colors ${enabled ? 'text-white' : 'text-gray-500'}`}>
             {enabled ? "OPEN" : "CLOSED"}
           </p>
           <button
             onClick={toggle}
             disabled={loading}
-            className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${enabled ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-white/10'}`}
+            className={`w-10 h-5 rounded-full p-0.5 transition-all duration-300 ${enabled ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-white/10'}`}
           >
-            <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-6' : 'translate-x-0'}`} />
+            <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
           </button>
         </div>
-        <p className={`text-xs mt-1 font-medium transition-colors ${enabled ? 'text-green-400' : 'text-gray-500'}`}>
-          {enabled ? "Public 'Join Team' link active" : "Applications disabled"}
-        </p>
       </div>
     </div>
   );
