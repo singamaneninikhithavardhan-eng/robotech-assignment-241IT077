@@ -121,9 +121,24 @@ export default function AdminEventForm() {
   }
 
   function validateForm() {
-    if (!form.title || !form.short_description || !form.full_description) {
-      showToast("Please fill all required fields.", "error");
+    const isFull = form.is_full_event;
+
+    // Basic fields always required
+    if (!form.title || !form.short_description) {
+      showToast("Please fill title and short description.", "error");
       return false;
+    }
+
+    // Full event specific requirements
+    if (isFull) {
+      if (!form.full_description) {
+        showToast("Full description is required for full events.", "error");
+        return false;
+      }
+      if (!isEdit && !bannerFile) {
+        showToast("Banner image is required for new full events.", "error");
+        return false;
+      }
     }
 
     if (
@@ -133,11 +148,6 @@ export default function AdminEventForm() {
         !form.external_registration_link)
     ) {
       showToast("Registration fields are incomplete.", "error");
-      return false;
-    }
-
-    if (!isEdit && !bannerFile) {
-      showToast("Banner image is required for new events.", "error");
       return false;
     }
 
@@ -223,21 +233,22 @@ export default function AdminEventForm() {
 
           <textarea
             name="short_description"
-            placeholder="Short description"
+            placeholder="Short description (for calendar/previews)"
             value={form.short_description}
             onChange={updateField}
             className="w-full bg-black/40 border border-white/10 rounded-lg p-3 h-24"
             required
           />
 
-          <textarea
-            name="full_description"
-            placeholder="Full description (HTML allowed)"
-            value={form.full_description}
-            onChange={updateField}
-            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 h-44"
-            required
-          />
+          {form.is_full_event && (
+            <textarea
+              name="full_description"
+              placeholder="Full description (HTML allowed)"
+              value={form.full_description}
+              onChange={updateField}
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-3 h-44"
+            />
+          )}
 
           <input
             name="venue"
@@ -362,50 +373,53 @@ export default function AdminEventForm() {
         </section>
 
         {/* ===== BANNER (STRICT VALIDATION ONLY ADDITION) ===== */}
-        <section className="space-y-2">
-          <label className="text-sm text-gray-400">
-            Event Banner {isEdit ? "(optional)" : "(required)"} — Max 2 MB
-          </label>
+        {/* ===== BANNER (STRICT VALIDATION ONLY ADDITION) ===== */}
+        {form.is_full_event && (
+          <section className="space-y-2">
+            <label className="text-sm text-gray-400">
+              Event Banner {isEdit ? "(optional)" : "(required)"} — Max 2 MB
+            </label>
 
-          {bannerPreview && (
-            <img
-              src={bannerPreview}
-              alt="Banner preview"
-              className="h-40 w-full object-cover rounded-lg border border-white/10"
+            {bannerPreview && (
+              <img
+                src={bannerPreview}
+                alt="Banner preview"
+                className="h-40 w-full object-cover rounded-lg border border-white/10"
+              />
+            )}
+
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                  showToast(
+                    "Invalid image format. Allowed: PNG, JPG, JPEG, WEBP.",
+                    "error"
+                  );
+                  e.target.value = "";
+                  return;
+                }
+
+                if (file.size > MAX_BANNER_SIZE) {
+                  showToast(
+                    "Banner image exceeds the maximum size of 2 MB.",
+                    "error"
+                  );
+                  e.target.value = "";
+                  return;
+                }
+
+                setBannerFile(file);
+                setBannerPreview(URL.createObjectURL(file));
+              }}
+              className="block text-sm"
             />
-          )}
-
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-
-              if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-                showToast(
-                  "Invalid image format. Allowed: PNG, JPG, JPEG, WEBP.",
-                  "error"
-                );
-                e.target.value = "";
-                return;
-              }
-
-              if (file.size > MAX_BANNER_SIZE) {
-                showToast(
-                  "Banner image exceeds the maximum size of 2 MB.",
-                  "error"
-                );
-                e.target.value = "";
-                return;
-              }
-
-              setBannerFile(file);
-              setBannerPreview(URL.createObjectURL(file));
-            }}
-            className="block text-sm"
-          />
-        </section>
+          </section>
+        )}
 
         {/* ===== REGISTRATION ===== */}
         <section>
