@@ -17,7 +17,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Project.objects.all().order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save()
+        # Save project first
+        project = serializer.save()
+        
+        # Auto-assign creator as Lead if no lead specified
+        if not project.lead and self.request.user:
+             project.lead = self.request.user
+             project.save()
+        
+        # Auto-add creator to members so they can access it immediately
+        if self.request.user:
+            project.members.add(self.request.user)
 
     @action(detail=True, methods=['post'])
     def request_status(self, request, pk=None):
