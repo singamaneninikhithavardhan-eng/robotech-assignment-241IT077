@@ -24,5 +24,5 @@ export default function AdminGuard({ children }) {
   }, []);
 
   if (allowed === null) return <div className="p-10 text-center text-white">Loading...</div>; // Simple loading state
-  return allowed ? children : <Navigate to="/login" />;
+  return allowed ? children : <Navigate to="/403" />;
 }
