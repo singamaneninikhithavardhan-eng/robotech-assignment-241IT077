@@ -11,6 +11,8 @@ class RecruitmentDriveViewSet(viewsets.ModelViewSet):
     # permission_classes = [GlobalPermission] -> Moved to get_permissions
 
     def get_permissions(self):
+        if self.action == 'active_public':
+            return [permissions.AllowAny()]
         from users.permissions import GlobalPermission
         return [GlobalPermission()]
 

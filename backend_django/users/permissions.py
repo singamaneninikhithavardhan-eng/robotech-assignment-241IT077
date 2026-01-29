@@ -29,7 +29,7 @@ class GlobalPermission(permissions.BasePermission):
             'GalleryViewSet',
             'announcements/public/',
             'gallery/public-grouped/',
-            'recruitment/drives/active_public/',
+
             'AnnouncementViewSet',
             'EventViewSet',
             'SponsorshipViewSet', # Might want to see current sponsors
