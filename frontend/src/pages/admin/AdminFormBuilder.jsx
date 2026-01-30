@@ -44,6 +44,13 @@ export default function AdminFormBuilder() {
     const [isRequired, setIsRequired] = useState(false);
     const [optionsList, setOptionsList] = useState([""]);
 
+    // Field Editing State
+    const [editingFieldId, setEditingFieldId] = useState(null);
+    const [editLabel, setEditLabel] = useState("");
+    const [editType, setEditType] = useState("text");
+    const [editRequired, setEditRequired] = useState(false);
+    const [editOptions, setEditOptions] = useState([""]);
+
     useEffect(() => {
         fetchForm();
     }, [id]);
@@ -189,6 +196,42 @@ export default function AdminFormBuilder() {
             await api.patch(`/forms/${id}/`, { closes_at: date });
             fetchForm();
         } catch (err) { alert("Deadline update failed"); }
+    };
+
+    const handleStartEdit = (field) => {
+        setEditingFieldId(field.id);
+        setEditLabel(field.label);
+        setEditType(field.field_type);
+        setEditRequired(field.required);
+        setEditOptions(field.options && field.options.length > 0 ? [...field.options] : [""]);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingFieldId(null);
+        setEditLabel("");
+        setEditType("text");
+        setEditRequired(false);
+        setEditOptions([""]);
+    };
+
+    const handleUpdateField = async () => {
+        if (!editLabel.trim()) return;
+
+        let options = [];
+        if (['select', 'radio', 'checkbox'].includes(editType)) {
+            options = editOptions.map(o => o.trim()).filter(o => o);
+        }
+
+        try {
+            await api.patch(`/form-fields/${editingFieldId}/`, {
+                label: editLabel,
+                field_type: editType,
+                required: editRequired,
+                options: options
+            });
+            handleCancelEdit();
+            fetchForm();
+        } catch (err) { alert("Failed to update field"); }
     };
 
     if (loading) return <div className="p-10 text-center text-orange-400 animate-pulse font-black uppercase tracking-widest">Constructing Interface...</div>;
@@ -355,44 +398,121 @@ export default function AdminFormBuilder() {
                                 </div>
                                 <div className="p-8 space-y-6 min-h-[400px]">
                                     {form.fields.filter(f => f.section === activeSectionId).map((field, idx) => (
-                                        <div key={field.id} className="bg-black/40 border border-white/5 rounded-2xl p-6 flex items-center justify-between group hover:border-orange-500/30 transition-all">
-                                            <div className="flex items-center gap-6">
-                                                <span className="text-gray-800 font-black text-xl italic">{String(idx + 1).padStart(2, '0')}</span>
-                                                <div>
-                                                    <div className="flex items-center gap-3">
-                                                        <h4 className="font-bold text-gray-100">{field.label}</h4>
-                                                        {field.required && <span className="text-[8px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded font-black uppercase tracking-widest">Required</span>}
+                                        editingFieldId === field.id ? (
+                                            <div key={field.id} className="bg-[#1a1a20] border border-orange-500/50 rounded-2xl p-6 relative">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <span className="text-orange-400 font-bold uppercase text-xs tracking-widest">Editing Field #{idx + 1}</span>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={handleUpdateField} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold uppercase transition">Save</button>
+                                                        <button onClick={handleCancelEdit} className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs font-bold uppercase transition">Cancel</button>
                                                     </div>
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest bg-white/5 px-2 py-1 rounded">{field.field_type}</span>
-                                                        {field.options?.length > 0 && <span className="text-[10px] text-gray-500 italic">Options: {field.options.join(', ')}</span>}
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-[10px] text-gray-500 font-bold uppercase mb-2">Label</label>
+                                                        <input
+                                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm focus:border-orange-500 outline-none text-white"
+                                                            value={editLabel}
+                                                            onChange={e => setEditLabel(e.target.value)}
+                                                        />
+                                                        <label className="flex items-center gap-2 mt-3 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={editRequired}
+                                                                onChange={e => setEditRequired(e.target.checked)}
+                                                                className="accent-orange-500"
+                                                            />
+                                                            <span className="text-[10px] text-gray-500 font-bold uppercase">Mandatory</span>
+                                                        </label>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] text-gray-500 font-bold uppercase mb-2">Type</label>
+                                                        <select
+                                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm focus:border-orange-500 outline-none text-white uppercase font-bold"
+                                                            value={editType}
+                                                            onChange={e => setEditType(e.target.value)}
+                                                        >
+                                                            {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+                                                        </select>
+
+                                                        {['select', 'radio', 'checkbox'].includes(editType) && (
+                                                            <div className="mt-3 space-y-2">
+                                                                <label className="block text-[8px] font-black text-orange-500 uppercase tracking-widest">Options</label>
+                                                                {editOptions.map((opt, optIdx) => (
+                                                                    <div key={optIdx} className="flex gap-2">
+                                                                        <input
+                                                                            className="flex-1 bg-black/40 border border-white/10 rounded-lg p-2 text-xs focus:border-orange-500 outline-none text-gray-300"
+                                                                            value={opt}
+                                                                            onChange={e => {
+                                                                                const newOpts = [...editOptions];
+                                                                                newOpts[optIdx] = e.target.value;
+                                                                                setEditOptions(newOpts);
+                                                                            }}
+                                                                        />
+                                                                        <button
+                                                                            onClick={() => setEditOptions(editOptions.filter((_, i) => i !== optIdx))}
+                                                                            className="text-red-500 hover:text-red-400 px-2"
+                                                                        >✕</button>
+                                                                    </div>
+                                                                ))}
+                                                                <button
+                                                                    onClick={() => setEditOptions([...editOptions, ""])}
+                                                                    className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] uppercase font-bold text-gray-400"
+                                                                >+ Add Option</button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleMoveField(field, -1); }}
-                                                    className="p-1 hover:text-orange-400 text-gray-600"
-                                                    title="Move Up"
-                                                >
-                                                    ▲
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleMoveField(field, 1); }}
-                                                    className="p-1 hover:text-orange-400 text-gray-600"
-                                                    title="Move Down"
-                                                >
-                                                    ▼
-                                                </button>
+                                        ) : (
+                                            <div key={field.id} className="bg-black/40 border border-white/5 rounded-2xl p-6 flex items-center justify-between group hover:border-orange-500/30 transition-all">
+                                                <div className="flex items-center gap-6">
+                                                    <span className="text-gray-800 font-black text-xl italic">{String(idx + 1).padStart(2, '0')}</span>
+                                                    <div>
+                                                        <div className="flex items-center gap-3">
+                                                            <h4 className="font-bold text-gray-100">{field.label}</h4>
+                                                            {field.required && <span className="text-[8px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded font-black uppercase tracking-widest">Required</span>}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest bg-white/5 px-2 py-1 rounded">{field.field_type}</span>
+                                                            {field.options?.length > 0 && <span className="text-[10px] text-gray-500 italic">Options: {field.options.join(', ')}</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleMoveField(field, -1); }}
+                                                        className="p-1 hover:text-orange-400 text-gray-600"
+                                                        title="Move Up"
+                                                    >
+                                                        ▲
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleMoveField(field, 1); }}
+                                                        className="p-1 hover:text-orange-400 text-gray-600"
+                                                        title="Move Down"
+                                                    >
+                                                        ▼
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleStartEdit(field); }}
+                                                        className="p-2 text-gray-600 hover:text-blue-400 hover:scale-110 transition-all"
+                                                        title="Edit Field"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteField(field.id)}
+                                                        className="p-2 text-gray-600 hover:text-red-500 hover:scale-110 transition-all"
+                                                        title="Delete Field"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteField(field.id)}
-                                                className="opacity-0 group-hover:opacity-100 p-2 text-gray-600 hover:text-red-500 transition-all hover:scale-110"
-                                                title="Delete Field"
-                                            >
-                                                🗑️
-                                            </button>
-                                        </div>
+                                        )
                                     ))}
                                     {form.fields.filter(f => f.section === activeSectionId).length === 0 && (
                                         <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-3xl opacity-30">
