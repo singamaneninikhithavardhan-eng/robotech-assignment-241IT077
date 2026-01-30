@@ -231,7 +231,11 @@ export default function AdminFormBuilder() {
             });
             handleCancelEdit();
             fetchForm();
-        } catch (err) { alert("Failed to update field"); }
+        } catch (err) {
+            console.error("Update failed", err);
+            const errMsg = err.response?.data ? JSON.stringify(err.response.data) : "Update failed";
+            alert(errMsg);
+        }
     };
 
     if (loading) return <div className="p-10 text-center text-orange-400 animate-pulse font-black uppercase tracking-widest">Constructing Interface...</div>;
