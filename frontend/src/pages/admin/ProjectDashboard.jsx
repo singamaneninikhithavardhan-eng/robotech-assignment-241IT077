@@ -97,29 +97,45 @@ export default function ProjectDashboard() {
         }
     };
 
-    // Optimized Polling Logic (State Machine approach)
+    // Adaptive Polling Logic (Traffic Control)
     useEffect(() => {
-        const interval = setInterval(async () => {
-            // Only poll if we have a project loaded
-            if (!project) return;
+        // Spin Down: If no user session, do not start engine
+        if (!user) return;
+
+        let timeoutId;
+        let isMount = true;
+
+        const poll = async () => {
+            // Stop polling if not active or tab hidden (Browser API)
+            if (document.hidden || !project) {
+                timeoutId = setTimeout(poll, 10000); // Slow down significantly when hidden
+                return;
+            }
 
             try {
                 // Lightweight Sync Call
                 const res = await api.get(`/projects/${id}/sync_state/`);
                 const { members_status, threads_state } = res.data;
 
-                // 1. Update Member Statuses Locally (No full re-render of project structure needed)
-                // We create a new object only if status changed to avoid ref re-renders if possible
-                // But simplified: Update last_login in the appropriate member objects in state
+                // State Update Logic
                 setProject(prev => {
                     if (!prev) return null;
-                    const updatedMembers = prev.members_details?.map(m => ({
-                        ...m,
-                        last_login: members_status[m.id] || m.last_login
-                    }));
-                    const updatedLead = prev.lead_details ? { ...prev.lead_details, last_login: members_status[prev.lead_details.id] || prev.lead_details.last_login } : prev.lead_details;
 
-                    // Check Thread Changes
+                    // Diffing logic
+                    const membersChanged = prev.members_details?.some(m => members_status[m.id] && members_status[m.id] !== m.last_login);
+                    const leadChanged = prev.lead_details && members_status[prev.lead_details.id] !== prev.lead_details.last_login;
+
+                    let updatedMembers = prev.members_details;
+                    let updatedLead = prev.lead_details;
+
+                    if (membersChanged) {
+                        updatedMembers = prev.members_details.map(m => ({ ...m, last_login: members_status[m.id] || m.last_login }));
+                    }
+                    if (leadChanged) {
+                        updatedLead = { ...prev.lead_details, last_login: members_status[prev.lead_details.id] || prev.lead_details.last_login };
+                    }
+
+                    // Thread Logic
                     let needsThreadReload = false;
                     if (activeTab === 'discussions') {
                         prev.threads?.forEach(t => {
@@ -129,21 +145,41 @@ export default function ProjectDashboard() {
                         });
                     }
 
-                    // If logic dictates reload, trigger it
                     if (needsThreadReload) {
-                        loadProject(true); // This will overwrite state anyway
-                        return prev; // Return current prev, let loadProject handle update
+                        loadProject(true);
+                        return prev;
                     }
 
-                    // Otherwise just update statuses
-                    return { ...prev, members_details: updatedMembers, lead_details: updatedLead };
+                    if (membersChanged || leadChanged) {
+                        return { ...prev, members_details: updatedMembers, lead_details: updatedLead };
+                    }
+                    return prev; // No re-render if nothing changed
                 });
 
-            } catch (err) { console.error("Sync failed", err); }
+                // Normal Pace: 5 seconds
+                timeoutId = setTimeout(poll, 5000);
 
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [id, activeTab, project]);
+            } catch (err) {
+                // Kill Switch: If Auth fails (401/403), stop polling completely
+                if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                    console.warn("Session expired. Stopping sync.");
+                    return;
+                }
+
+                console.error("Sync failed, backing off", err);
+                // Error Backoff: 15 seconds
+                timeoutId = setTimeout(poll, 15000);
+            }
+        };
+
+        // Start the loop
+        timeoutId = setTimeout(poll, 5000);
+
+        return () => {
+            isMount = false;
+            clearTimeout(timeoutId);
+        };
+    }, [id, activeTab, project, user]);
 
     // Clear unread when viewing thread
     useEffect(() => {
@@ -436,9 +472,27 @@ function DiscussionsTab({ project, user, onUpdate, unreadMsgIds, setUnreadMsgIds
         e.preventDefault();
         if (!msg.trim() || !activeThreadId) return;
         try {
-            await api.post("/messages/", { content: msg, thread: activeThreadId });
+            const res = await api.post("/messages/", { content: msg, thread: activeThreadId });
             setMsg("");
-            onUpdate(true); // Silent update
+
+            // Manual local update to avoid full reload
+            onUpdate(false); // Don't trigger full reload
+            // Manually append message to state (Optimistic-ish / Instant feedback)
+            // But actually we should let the poller pick it up OR inject it.
+            // Better: trigger a single thread refresh or just let next poll handle it?
+            // User expects instant feedback. Let's force a lightweight sync immediately or just inject.
+            // Since we have setProject in parent, we can't easily inject deep.
+            // Compromise: Force a "thread-only" reload or just wait for poll? 
+            // Wait for poll is laggy. Let's call loadProject(true) aka silent reload for now 
+            // BUT we just optimized loadProject away.
+            // Fix: We need to inject the new message into the project state.
+            // Passed down props don't allow easy deep mutation.
+            // Fallback: trigger silent reload (the old way) is safe but heavy.
+            // New way: Call Sync immediately.
+            // We can't easily trigger the poll effect manually.
+            // Simplest safe approach:
+            onUpdate(true); // Triggers full loadProject(true) which is now the fallback for heavy updates.
+            // Wait, we optimized the poller, but loadProject is still available for manual actions!
         } catch (err) { console.error(err); }
     }
 
