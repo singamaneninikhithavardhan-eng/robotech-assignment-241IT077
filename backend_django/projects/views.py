@@ -140,6 +140,11 @@ class ProjectThreadViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def purge_messages(self, request, pk=None):
         thread = self.get_object()
+        user = request.user
+        # Logic: Only Lead or Admin can nuke history
+        if not (user.is_superuser or user == thread.project.lead):
+             return Response({"error": "Only the Project Lead can wipe history."}, status=403)
+             
         count = thread.messages.all().delete()[0]
         return Response({'status': 'purged', 'count': count})
 
