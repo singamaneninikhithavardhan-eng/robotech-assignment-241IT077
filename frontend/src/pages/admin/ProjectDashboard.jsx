@@ -115,7 +115,7 @@ export default function ProjectDashboard() {
             try {
                 // Lightweight Sync Call
                 const res = await api.get(`/projects/${id}/sync_state/`);
-                const { members_status, threads_state = {} } = res.data;
+                const { members_status = {}, threads_state = {} } = res.data || {};
 
                 // State Update Logic
                 // 3. Diffing & Side-Effects (Moved OUT of setProject)
@@ -179,9 +179,9 @@ export default function ProjectDashboard() {
     // Clear unread when viewing thread
     useEffect(() => {
         const currentThreadId = parseInt(searchParams.get("thread"));
-        if (activeTab === 'discussions' && currentThreadId && project && unreadMsgIds.size > 0) {
+        if (activeTab === 'discussions' && currentThreadId && project?.threads && unreadMsgIds.size > 0) {
             const thread = project.threads.find(t => t.id === currentThreadId);
-            if (thread) {
+            if (thread && thread.messages) {
                 const newUnread = new Set(unreadMsgIds);
                 let changed = false;
                 thread.messages.forEach(m => {

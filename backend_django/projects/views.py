@@ -15,8 +15,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [GlobalPermission]
 
     def get_queryset(self):
-        # Allow all visibility for GET if permission allows
-        return Project.objects.all().order_by('-created_at')
+        user = self.request.user
+        if user.is_superuser:
+            return Project.objects.all().order_by('-created_at')
+        return Project.objects.filter(models.Q(lead=user) | models.Q(members=user)).distinct().order_by('-created_at')
 
     def perform_create(self, serializer):
         # Save project first
@@ -67,16 +69,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Request already exists'}, status=status.HTTP_400_BAD_REQUEST)
             
         return Response({'status': 'Join request sent'})
-
-    @action(detail=False, methods=['get'])
-    def debug_cache(self, request):
-        try:
-            from django.core.cache import cache
-            cache.set('test_key', 'test_value', 30)
-            val = cache.get('test_key')
-            return Response({'status': 'ok', 'val': val, 'backend': str(cache.backend)})
-        except Exception as e:
-            return Response({'error': str(e), 'type': type(e).__name__}, status=500)
 
     @action(detail=True, methods=['get'])
     def sync_state(self, request, pk=None):
@@ -164,6 +156,12 @@ class ProjectThreadViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectThreadSerializer
     permission_classes = [IsAuthenticated, IsProjectMember]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return ProjectThread.objects.all()
+        return ProjectThread.objects.filter(models.Q(project__lead=user) | models.Q(project__members=user)).distinct()
+
     def perform_create(self, serializer):
         project = serializer.validated_data.get('project')
         if project and not (self.request.user == project.lead or self.request.user in project.members.all()):
@@ -227,6 +225,12 @@ class ThreadMessageViewSet(viewsets.ModelViewSet):
     queryset = ThreadMessage.objects.all()
     serializer_class = ThreadMessageSerializer
     permission_classes = [IsAuthenticated, IsProjectMember]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return ThreadMessage.objects.all()
+        return ThreadMessage.objects.filter(models.Q(thread__project__lead=user) | models.Q(thread__project__members=user)).distinct()
 
     def perform_create(self, serializer):
         thread = serializer.validated_data.get('thread')
