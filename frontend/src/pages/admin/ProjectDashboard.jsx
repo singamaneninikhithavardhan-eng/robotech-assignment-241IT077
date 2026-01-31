@@ -264,6 +264,11 @@ function TasksTab({ project, user, allUsers, onUpdate }) {
     const [newTask, setNewTask] = useState({ title: "", due_date: "", requirements: "", assigned_to: "" });
     const [showAdd, setShowAdd] = useState(false);
 
+    // Filter potential assignees to only project members and lead
+    const assignableUsers = [project.lead_details, ...(project.members_details || [])].filter(Boolean);
+    // Ensure uniqueness just in case
+    const uniqueAssignable = Array.from(new Map(assignableUsers.map(u => [u.id, u])).values());
+
     const handleAdd = async () => {
         if (!newTask.title) return;
         try {
@@ -294,7 +299,7 @@ function TasksTab({ project, user, allUsers, onUpdate }) {
                             <input type="date" className="bg-black/40 border border-white/10 rounded p-2 text-sm text-gray-400" value={newTask.due_date} onChange={e => setNewTask({ ...newTask, due_date: e.target.value })} />
                             <select className="bg-black/40 border border-white/10 rounded p-2 text-sm text-gray-400" value={newTask.assigned_to} onChange={e => setNewTask({ ...newTask, assigned_to: e.target.value })}>
                                 <option value="">Unassigned</option>
-                                {allUsers?.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+                                {uniqueAssignable.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
                             </select>
                         </div>
                     </div>
@@ -525,6 +530,12 @@ function TeamTab({ project, user, allUsers, onUpdate }) {
         } catch (err) { alert("Operation failed."); }
     }
 
+    const isUserOnline = (lastLogin) => {
+        if (!lastLogin) return false;
+        const diff = (new Date() - new Date(lastLogin)) / 1000 / 60; // minutes
+        return diff < 60; // Considered online if logged in within last 60 minutes
+    };
+
     return (
         <div className="space-y-8">
             <div>
@@ -562,18 +573,34 @@ function TeamTab({ project, user, allUsers, onUpdate }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-xl flex items-center gap-4 relative overflow-hidden group">
                         <div className="absolute -right-4 -top-4 text-cyan-500/10 scale-150 rotate-12 transition-transform group-hover:rotate-0"><UserIcon /></div>
-                        <div className="w-12 h-12 rounded-full bg-cyan-600 flex items-center justify-center font-bold text-xl">{project.lead_details?.username?.[0]}</div>
+                        <div className="w-12 h-12 rounded-full bg-cyan-600 flex items-center justify-center font-bold text-xl relative">
+                            {project.lead_details?.username?.[0]}
+                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#111] ${isUserOnline(project.lead_details?.last_login) ? 'bg-green-500' : 'bg-gray-500'}`} />
+                        </div>
                         <div>
                             <h4 className="font-bold text-cyan-400">LEAD: {project.lead_details?.profile?.full_name || project.lead_details?.username}</h4>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">{project.lead_details?.profile?.position || "Officer"}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1">
+                                {project.lead_details?.profile?.position || "Officer"} •
+                                <span className={isUserOnline(project.lead_details?.last_login) ? 'text-green-400' : 'text-gray-500'}>
+                                    {isUserOnline(project.lead_details?.last_login) ? 'Available' : 'Away'}
+                                </span>
+                            </p>
                         </div>
                     </div>
                     {project.members_details?.map(m => (
                         <div key={m.id} className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center gap-4 hover:border-white/30 transition-all group overflow-hidden relative">
-                            <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold">{m.username[0]}</div>
+                            <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold relative">
+                                {m.username[0]}
+                                <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#111] ${isUserOnline(m.last_login) ? 'bg-green-500' : 'bg-gray-500'}`} />
+                            </div>
                             <div>
                                 <h4 className="font-bold text-gray-200">{m.profile?.full_name || m.username}</h4>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">{m.profile?.position || "Field Agent"}</p>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase flex items-center gap-1">
+                                    {m.profile?.position || "Field Agent"} •
+                                    <span className={isUserOnline(m.last_login) ? 'text-green-400' : 'text-gray-500'}>
+                                        {isUserOnline(m.last_login) ? 'Available' : 'Away'}
+                                    </span>
+                                </p>
                             </div>
                             {isLead && (
                                 <button

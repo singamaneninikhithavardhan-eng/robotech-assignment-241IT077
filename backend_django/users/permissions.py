@@ -83,6 +83,9 @@ class GlobalPermission(permissions.BasePermission):
         # if request.method in permissions.SAFE_METHODS:
         #    return True
 
+        if view_name in ['RecruitmentDriveViewSet', 'TimelineEventViewSet'] and request.method in permissions.SAFE_METHODS:
+             return True
+
         # 5. Mutation Mapping
         perm_map = {
             'UserViewSet': 'can_manage_users',
@@ -108,6 +111,8 @@ class GlobalPermission(permissions.BasePermission):
             'QuizViewSet': 'can_manage_forms',
             'QuestionViewSet': 'can_manage_forms',
             'QuizAttemptViewSet': 'can_manage_forms',
+            'RecruitmentDriveViewSet': 'can_manage_team',
+            'TimelineEventViewSet': 'can_manage_team',
         }
 
         if view_name == 'UserViewSet' and request.method in permissions.SAFE_METHODS:
