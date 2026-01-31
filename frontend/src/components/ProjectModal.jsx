@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { buildMediaUrl } from "../../utils/mediaUrl";
+import { buildMediaUrl } from "../utils/mediaUrl";
 import api from "../api/axios";
 
 export default function ProjectModal({ projectId, onClose }) {
@@ -61,10 +61,9 @@ export default function ProjectModal({ projectId, onClose }) {
                     src={buildMediaUrl(img)}
                     onClick={() => setActiveIndex(i)}
                     className={`h-16 w-24 object-cover cursor-pointer border transition
-                      ${
-                        i === activeIndex
-                          ? "border-cyan-400"
-                          : "border-transparent hover:border-white/30"
+                      ${i === activeIndex
+                        ? "border-cyan-400"
+                        : "border-transparent hover:border-white/30"
                       }`}
                     alt={`thumbnail-${i}`}
                   />

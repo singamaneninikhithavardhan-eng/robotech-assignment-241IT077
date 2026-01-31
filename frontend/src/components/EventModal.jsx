@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import api from "../api/axios";
-import { buildMediaUrl } from "../../utils/mediaUrl";
+import { buildMediaUrl } from "../utils/mediaUrl";
 
 /* =========================
    Skeleton Component

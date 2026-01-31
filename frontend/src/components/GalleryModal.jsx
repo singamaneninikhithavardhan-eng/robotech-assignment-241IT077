@@ -1,4 +1,4 @@
-import { buildMediaUrl } from "../../utils/mediaUrl";
+import { buildMediaUrl } from "../utils/mediaUrl";
 
 export default function GalleryModal({ image, onClose }) {
   if (!image) return null;

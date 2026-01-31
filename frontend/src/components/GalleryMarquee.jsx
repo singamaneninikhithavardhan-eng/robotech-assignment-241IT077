@@ -1,4 +1,4 @@
-import { buildMediaUrl } from "../../utils/mediaUrl";
+import { buildMediaUrl } from "../utils/mediaUrl";
 
 export default function GalleryMarquee({ images, onOpen }) {
   if (!images || images.length === 0) return null;
