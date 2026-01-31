@@ -1,4 +1,4 @@
-from django.db import models
+from django.db.models import Q
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,9 +17,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser:
+        
+        # 1. Base Query: Everything for Superusers
+        if user.is_authenticated and user.is_superuser:
             return Project.objects.all().order_by('-created_at')
-        return Project.objects.filter(models.Q(lead=user) | models.Q(members=user)).distinct().order_by('-created_at')
+            
+        # 2. Logic for Authenticated Members/Leads
+        if user.is_authenticated:
+            return Project.objects.filter(
+                Q(is_public=True) | 
+                Q(lead=user) | 
+                Q(members=user)
+            ).distinct().order_by('-created_at')
+            
+        # 3. Logic for Public/Anonymous Users
+        return Project.objects.filter(is_public=True).order_by('-created_at')
 
     def perform_create(self, serializer):
         # Save project first
@@ -161,7 +173,7 @@ class ProjectThreadViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser:
             return ProjectThread.objects.all()
-        return ProjectThread.objects.filter(models.Q(project__lead=user) | models.Q(project__members=user)).distinct()
+        return ProjectThread.objects.filter(Q(project__lead=user) | Q(project__members=user)).distinct()
 
     def perform_create(self, serializer):
         project = serializer.validated_data.get('project')
@@ -231,7 +243,7 @@ class ThreadMessageViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser:
             return ThreadMessage.objects.all()
-        return ThreadMessage.objects.filter(models.Q(thread__project__lead=user) | models.Q(thread__project__members=user)).distinct()
+        return ThreadMessage.objects.filter(Q(thread__project__lead=user) | Q(thread__project__members=user)).distinct()
 
     def perform_create(self, serializer):
         thread = serializer.validated_data.get('thread')

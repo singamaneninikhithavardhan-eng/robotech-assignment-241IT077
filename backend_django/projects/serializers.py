@@ -49,3 +49,24 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        request = self.context.get('request')
+        
+        # Security: Only show inner details to members/leads or staff
+        is_member = False
+        if request and request.user.is_authenticated:
+            user = request.user
+            if user.is_superuser or instance.lead == user or instance.members.filter(id=user.id).exists():
+                is_member = True
+        
+        if not is_member:
+            # Strip sensitive management data for public view
+            ret.pop('threads', None)
+            ret.pop('tasks', None)
+            ret.pop('join_requests', None)
+            ret.pop('status_update_requested', None)
+            ret.pop('status_requested_by', None)
+            
+        return ret
