@@ -117,6 +117,16 @@ export default function AdminDashboard() {
           />
         )}
 
+        {hasPermission('can_manage_security') && (
+          <DashboardCard
+            title="Audit Logs"
+            icon={Shield}
+            onClick={() => navigate("/portal/audit-logs")}
+            accent="text-red-400"
+            color="rgba(248,113,113,0.1)"
+          />
+        )}
+
         {hasPermission('can_manage_team') && (
           <DashboardCard
             title="Structure"

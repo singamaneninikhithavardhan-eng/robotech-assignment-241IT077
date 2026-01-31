@@ -2,6 +2,8 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+from django.http import HttpResponse
+import csv
 from .models import (
     Announcement, GalleryImage, Sponsorship, ContactMessage, 
     Form, FormSection, FormField, FormResponse
@@ -90,6 +92,41 @@ class FormViewSet(viewsets.ModelViewSet):
         form = self.get_object()
         responses = form.responses.all().order_by('-submitted_at')
         return Response(FormResponseSerializer(responses, many=True).data)
+
+    @action(detail=True, methods=['get'])
+    def export_responses_csv(self, request, pk=None):
+        form = self.get_object()
+        responses = form.responses.all().order_by('-submitted_at')
+        fields = form.fields.all().order_by('order')
+        
+        response = HttpResponse(content_type='text/csv')
+        filename = f"{form.title.replace(' ', '_')}_responses.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        writer = csv.writer(response)
+        
+        # Headers
+        headers = ['Response ID', 'User', 'Submitted At'] + [f.label for f in fields]
+        writer.writerow(headers)
+
+        for resp in responses:
+            user_str = resp.user.username if resp.user else 'Anonymous'
+            row = [
+                resp.id, 
+                user_str, 
+                resp.submitted_at.strftime("%Y-%m-%d %H:%M:%S")
+            ]
+            
+            # Map data
+            data = resp.data or {}
+            for field in fields:
+                val = data.get(field.label, '')
+                if isinstance(val, list): val = ", ".join(map(str, val))
+                row.append(str(val))
+            
+            writer.writerow(row)
+            
+        return response
 
 class FormSectionViewSet(viewsets.ModelViewSet):
     queryset = FormSection.objects.all()

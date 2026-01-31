@@ -76,6 +76,24 @@ export default function AdminFormResponses() {
         } catch (err) { alert("Purge failed."); }
     };
 
+    const handleExport = async () => {
+        try {
+            const response = await api.get(`/forms/${id}/export_responses_csv/`, {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute('download', `${form.title.replace(/\s+/g, '_')}_responses.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error(err);
+            alert("Export failed.");
+        }
+    };
+
     if (loading) return <div className="p-10 text-center text-orange-400 animate-pulse font-black">DECRYPTING RESULTS...</div>;
 
     const fields = form.fields || [];
@@ -104,6 +122,13 @@ export default function AdminFormResponses() {
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Total Signals Detected</p>
                     <p className="text-3xl font-black font-[Orbitron] text-orange-400">{responses.length}</p>
                 </div>
+                <button
+                    onClick={handleExport}
+                    className="bg-green-500/10 border border-green-500/50 text-green-400 px-6 py-4 rounded-2xl shadow-xl hover:bg-green-500/20 transition backdrop-blur-md font-bold uppercase text-xs tracking-widest flex flex-col items-center justify-center gap-1 h-full"
+                >
+                    <span>⬇ CSV</span>
+                    <span className="opacity-50 text-[10px]">Export Data</span>
+                </button>
             </div>
 
             <div className="overflow-x-auto bg-[#0a0a0f] border border-white/5 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] scrollbar-thin scrollbar-thumb-orange-600 scrollbar-track-black pb-4">

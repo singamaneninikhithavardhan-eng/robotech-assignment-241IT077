@@ -9,8 +9,42 @@ export default function AdminAuditLogs() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [eventType, setEventType] = useState("");
+  const [deleteDays, setDeleteDays] = useState(""); // For delete input
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const limit = 20;
+
+  const handleExport = async () => {
+    try {
+      const response = await api.get("/audit-logs/export_csv/", {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "audit_logs.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("Failed to export logs.");
+    }
+  };
+
+  const handleDeleteLogs = async () => {
+    if (!deleteDays) return;
+    try {
+      const res = await api.post("/audit-logs/delete_old_logs/", { days: deleteDays });
+      alert(`Deleted ${res.data.deleted_count} logs.`);
+      setShowDeleteConfirm(false);
+      setDeleteDays("");
+      fetchLogs();
+    } catch (err) {
+      console.error("Delete failed", err);
+      alert("Failed to delete logs.");
+    }
+  };
 
   useEffect(() => {
     fetchLogs();
@@ -79,6 +113,43 @@ export default function AdminAuditLogs() {
           </p>
         </div>
 
+        <div className="flex gap-2 items-center mt-4 md:mt-0">
+          <button
+            onClick={handleExport}
+            className="bg-green-500/20 text-green-400 border border-green-500/50 px-4 py-2 rounded-lg text-sm hover:bg-green-500/30 transition font-bold"
+          >
+            ⬇ Export CSV
+          </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}
+              className="bg-red-500/20 text-red-400 border border-red-500/50 px-4 py-2 rounded-lg text-sm hover:bg-red-500/30 transition font-bold"
+            >
+              🗑 Purge Old
+            </button>
+
+            {showDeleteConfirm && (
+              <div className="absolute right-0 top-12 bg-[#111] border border-red-500/30 p-4 rounded-xl shadow-2xl z-50 w-64">
+                <p className="text-xs text-gray-400 mb-2">Delete logs older than X days:</p>
+                <input
+                  type="number"
+                  className="w-full bg-black/40 border border-white/10 rounded p-2 text-white mb-2 text-sm"
+                  placeholder="Days e.g., 30"
+                  value={deleteDays}
+                  onChange={(e) => setDeleteDays(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-1 bg-gray-700 rounded text-xs">Cancel</button>
+                  <button onClick={handleDeleteLogs} className="flex-1 py-1 bg-red-600 rounded text-xs font-bold">Purge</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         {/* ===== FILTER ===== */}
         <select
           value={eventType}

@@ -11,6 +11,10 @@ from .serializers import (
 )
 from .permissions import GlobalPermission
 import json
+import csv
+from django.http import HttpResponse
+from django.utils import timezone
+from datetime import timedelta
 
 User = get_user_model()
 
@@ -33,6 +37,40 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
     permission_classes = [GlobalPermission]
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="audit_logs.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Event Type', 'Actor', 'Target', 'IP Address', 'Details', 'Created At'])
+
+        for log in self.queryset.all():
+            writer.writerow([
+                log.event_type,
+                log.actor.username if log.actor else 'System/Proton',
+                log.target,
+                log.ip_address,
+                log.details,
+                log.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            ])
+        return response
+
+    @action(detail=False, methods=['post'])
+    def delete_old_logs(self, request):
+        days = request.data.get('days')
+        if not days:
+            return Response({"error": "Days parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            days = int(days)
+            cutoff_date = timezone.now() - timedelta(days=days)
+            deleted_count, _ = AuditLog.objects.filter(created_at__lt=cutoff_date).delete()
+            log_audit(request, "LOGS_CLEANED", f"Deleted {deleted_count} logs older than {days} days")
+            return Response({"status": "success", "deleted_count": deleted_count})
+        except ValueError:
+             return Response({"error": "Invalid days parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -94,6 +132,27 @@ class UserViewSet(viewsets.ModelViewSet):
              log_audit(request, "USER_MODIFIED", f"Modified user {user.username}", ", ".join(changes))
 
         return Response(UserSerializer(user).data)
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="users.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Username', 'Email', 'Full Name', 'Role', 'Team Position', 'SIG', 'Status'])
+
+        for user in self.queryset.all():
+            profile = getattr(user, 'profile', None)
+            writer.writerow([
+                user.username,
+                user.email,
+                profile.full_name if profile else '',
+                user.role,
+                profile.position if profile else '',
+                profile.sig if profile else '',
+                'Active' if user.is_active else 'Inactive'
+            ])
+        return response
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
