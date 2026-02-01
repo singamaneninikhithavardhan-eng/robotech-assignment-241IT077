@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+/backend_django/_pycache_
+/backend_django/migrations/_pycache_
