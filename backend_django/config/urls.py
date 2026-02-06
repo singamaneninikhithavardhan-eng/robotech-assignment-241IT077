@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-
+from django_prometheus import exports
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -26,5 +26,7 @@ urlpatterns = [
     path('internal-v1-secret-admin/', admin.site.urls),
     path('api/', include(api_patterns)),
     path('api/recruitment/', include(recruitment_urls)),
+#added the location point of metrics
+    path("metrics/", exports.ExportToDjangoView),
     path('api/attendance/', include('attendance.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

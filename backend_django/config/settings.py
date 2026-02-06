@@ -40,8 +40,8 @@ USE_X_FORWARDED_HOST = True
 # ======================
 # APPLICATIONS
 # ======================
-
 INSTALLED_APPS = [
+    'django_prometheus',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -70,7 +70,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+'django_prometheus.middleware.PrometheusBeforeMiddleware',
 
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
