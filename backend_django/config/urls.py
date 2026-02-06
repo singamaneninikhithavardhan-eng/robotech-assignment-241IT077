@@ -4,6 +4,9 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+
+from django.http import HttpResponse
+
 # Import URL patterns from apps
 from users import urls as user_urls
 from projects import urls as project_urls
@@ -18,6 +21,8 @@ from recruitment import urls as recruitment_urls
 api_patterns = user_urls.urlpatterns + project_urls.urlpatterns + events_urls.urlpatterns + core_urls.urlpatterns + quizzes_urls.urlpatterns + recruitment_urls.urlpatterns
 
 urlpatterns = [
+#added for confirmation
+    path("", lambda request: HttpResponse("Nikhitha VArdhan-Backend running")),
     path('internal-v1-secret-admin/', admin.site.urls),
     path('api/', include(api_patterns)),
     path('api/recruitment/', include(recruitment_urls)),
